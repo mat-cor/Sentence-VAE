@@ -12,6 +12,7 @@ class SentenceVAE(nn.Module):
         self.tensor = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.Tensor
 
         self.max_sequence_length = max_sequence_length
+        # not needed
         self.sos_idx = sos_idx
         self.eos_idx = eos_idx
         self.pad_idx = pad_idx
@@ -24,9 +25,10 @@ class SentenceVAE(nn.Module):
         self.num_layers = num_layers
         self.hidden_size = hidden_size
 
-        self.embedding = nn.Embedding(vocab_size, embedding_size)
         self.word_dropout_rate = word_dropout
-        self.embedding_dropout = nn.Dropout(p=embedding_dropout)
+
+        # self.embedding = nn.Embedding(vocab_size, embedding_size)
+        # self.embedding_dropout = nn.Dropout(p=embedding_dropout)
 
         if rnn_type == 'rnn':
             rnn = nn.RNN
@@ -56,9 +58,9 @@ class SentenceVAE(nn.Module):
         input_sequence = input_sequence[sorted_idx]
 
         # ENCODER
-        input_embedding = self.embedding(input_sequence)
+        #input_embedding = self.embedding(input_sequence)
 
-        packed_input = rnn_utils.pack_padded_sequence(input_embedding, sorted_lengths.data.tolist(), batch_first=True)
+        packed_input = rnn_utils.pack_padded_sequence(input_sequence, sorted_lengths.data.tolist(), batch_first=True)
 
         _, hidden = self.encoder_rnn(packed_input)
 
@@ -94,9 +96,9 @@ class SentenceVAE(nn.Module):
             prob[(input_sequence.data - self.sos_idx) * (input_sequence.data - self.pad_idx) == 0] = 1
             decoder_input_sequence = input_sequence.clone()
             decoder_input_sequence[prob < self.word_dropout_rate] = self.unk_idx
-            input_embedding = self.embedding(decoder_input_sequence)
-        input_embedding = self.embedding_dropout(input_embedding)
-        packed_input = rnn_utils.pack_padded_sequence(input_embedding, sorted_lengths.data.tolist(), batch_first=True)
+            # input_embedding = self.embedding(decoder_input_sequence)
+        # input_embedding = self.embedding_dropout(input_embedding)
+        packed_input = rnn_utils.pack_padded_sequence(input_sequence, sorted_lengths.data.tolist(), batch_first=True)
 
         # decoder forward pass
         outputs, _ = self.decoder_rnn(packed_input, hidden)
@@ -109,10 +111,10 @@ class SentenceVAE(nn.Module):
         b,s,_ = padded_outputs.size()
 
         # project outputs to vocab
-        logp = nn.functional.log_softmax(self.outputs2vocab(padded_outputs.view(-1, padded_outputs.size(2))), dim=-1)
-        logp = logp.view(b, s, self.embedding.num_embeddings)
+        # logp = nn.functional.log_softmax(self.outputs2vocab(padded_outputs.view(-1, padded_outputs.size(2))), dim=-1)
+        # logp = logp.view(b, s, self.embedding.num_embeddings)
 
-        return logp, mean, logv, z
+        return padded_outputs, mean, logv, z
 
     def inference(self, n=4, z=None):
 
