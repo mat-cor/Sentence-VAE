@@ -5,8 +5,8 @@ from utils import to_var
 
 
 class SentenceVAE(nn.Module):
-    def __init__(self, vocab_size, embedding_size, rnn_type, hidden_size, word_dropout, embedding_dropout, latent_size,
-                sos_idx, eos_idx, pad_idx, unk_idx, max_sequence_length, num_layers=1, bidirectional=False):
+    def __init__(self, rnn_type, embedding_size, hidden_size, word_dropout, latent_size,
+                 sos_idx, eos_idx, pad_idx, unk_idx, max_sequence_length, num_layers=1, bidirectional=False):
 
         super().__init__()
         self.tensor = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.Tensor
@@ -58,8 +58,8 @@ class SentenceVAE(nn.Module):
         input_sequence = input_sequence[sorted_idx]
 
         # ENCODER
-        #input_embedding = self.embedding(input_sequence)
-
+        # input_embedding = self.embedding(input_sequence)
+        
         packed_input = rnn_utils.pack_padded_sequence(input_sequence, sorted_lengths.data.tolist(), batch_first=True)
 
         _, hidden = self.encoder_rnn(packed_input)
